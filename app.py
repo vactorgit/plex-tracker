@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.secret_key = 'plex-tracker-secret-key-change-in-production'
 
 DB_PATH = 'plex_tracker.db'
-USERS = ['You', 'Jeff', 'Brad']
+USERS = ['Vactor', 'Jeff', 'Brad']
 
 def init_db():
     """Initialize the database with tables."""

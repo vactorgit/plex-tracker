@@ -18,17 +18,30 @@
         }
 
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00A4EF 0%, #223344 100%);
             color: white;
-            padding: 20px 30px;
+            padding: 15px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-logo {
+            width: 40px;
+            height: 40px;
         }
 
         h1 {
             font-size: 24px;
+            font-weight: 700;
+            margin: 0;
         }
 
         .user-info {
@@ -250,7 +263,17 @@
 </head>
 <body>
     <header>
-        <h1>🎬 Plex Tracker</h1>
+        <div class="header-left">
+            <svg class="header-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100" height="100" rx="8" fill="#FFFFFF" opacity="0.15"/>
+                <g fill="#FFFFFF" transform="translate(28, 30)">
+                    <rect x="0" y="0" width="7" height="40"/>
+                    <rect x="11" y="8" width="7" height="32"/>
+                    <rect x="22" y="0" width="7" height="40"/>
+                </g>
+            </svg>
+            <h1>Plex Tracker</h1>
+        </div>
         <div class="user-info">
             <div class="user-badge">Logged in as: <strong>{{ user }}</strong></div>
             <a href="/logout" class="logout-btn">Logout</a>
