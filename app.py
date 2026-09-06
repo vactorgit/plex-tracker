@@ -47,13 +47,24 @@ def get_plex_token(username, password):
         auth_str = base64.b64encode(f"{username}:{password}".encode()).decode()
         headers = {
             'Authorization': f'Basic {auth_str}',
-            'X-Plex-Client-Identifier': 'plex-tracker'
+            'X-Plex-Client-Identifier': 'plex-tracker',
+            'X-Plex-Product': 'Plex Tracker',
+            'X-Plex-Version': '1.0'
         }
+        # Try the modern endpoint first
+        response = requests.post('https://plex.tv/api/v2/user/signin', headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get('authToken') or data.get('authentication-token')
+
+        # Fallback to legacy endpoint
         response = requests.post('https://plex.tv/users/sign-in.json', headers=headers, timeout=5)
         if response.status_code == 201:
             return response.json().get('user', {}).get('authentication-token')
+
         return None
-    except:
+    except Exception as e:
+        print(f"Plex auth error: {e}")
         return None
 
 def get_plex_library(token):
