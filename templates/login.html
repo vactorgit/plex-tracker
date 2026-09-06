@@ -12,46 +12,62 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0B1929 0%, #1a2540 50%, #2d3e50 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
         }
 
         .container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-            max-width: 400px;
-            width: 90%;
+            border-radius: 20px;
+            box-shadow: 0 30px 100px rgba(0, 0, 0, 0.5);
+            padding: 60px 50px;
+            max-width: 480px;
+            width: 100%;
         }
 
-        .logo-container {
+        .logo-wrapper {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 40px;
         }
 
-        .plex-logo {
-            width: 80px;
-            height: 80px;
+        .logo-box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 110px;
+            height: 110px;
+            background: linear-gradient(135deg, #00A4EF 0%, #0088CC 100%);
+            border-radius: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 40px rgba(0, 164, 239, 0.3);
+        }
+
+        .logo-box svg {
+            width: 70px;
+            height: 70px;
+            filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.2));
         }
 
         h1 {
             text-align: center;
             margin-bottom: 10px;
-            color: #333;
-            font-size: 28px;
-            font-weight: 700;
+            color: #0B1929;
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: -1px;
         }
 
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
+            margin-bottom: 40px;
+            font-size: 15px;
+            font-weight: 500;
         }
 
         form {
@@ -60,60 +76,150 @@
         }
 
         label {
-            margin-top: 20px;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 600;
+            margin-bottom: 14px;
+            color: #0B1929;
+            font-weight: 800;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .user-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 35px;
+        }
+
+        button {
+            padding: 14px 12px;
+            border: 2.5px solid #00A4EF;
+            border-radius: 12px;
+            background: white;
+            color: #00A4EF;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #00A4EF;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 164, 239, 0.3);
+        }
+
+        button[type="submit"] {
+            margin-top: 0;
+            padding: 16px;
+            background: linear-gradient(135deg, #00A4EF 0%, #0088CC 100%);
+            color: white;
+            border: none;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button[type="submit"]:hover {
+            box-shadow: 0 15px 40px rgba(0, 164, 239, 0.4);
+            transform: translateY(-3px);
+        }
+
+        button[type="submit"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        input[type="hidden"] {
+            display: none;
+        }
+
+        .selected {
+            background: #00A4EF !important;
+            color: white !important;
+            box-shadow: 0 10px 25px rgba(0, 164, 239, 0.3);
         }
 
         .divider {
             text-align: center;
-            margin: 25px 0 20px;
-            color: #999;
+            margin: 45px 0 35px;
+            color: #bbb;
             font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            position: relative;
+        }
+
+        .divider:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1.5px;
+            background: #e0e6ed;
+            z-index: 0;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .plex-section {
-            border-top: 1px solid #e0e6ed;
-            padding-top: 20px;
+            padding: 0;
         }
 
         .plex-section h3 {
-            color: #667eea;
-            font-size: 14px;
-            margin-bottom: 15px;
+            color: #00A4EF;
+            font-size: 12px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 800;
         }
 
         input[type="text"],
         input[type="password"] {
-            padding: 12px;
+            padding: 13px 16px;
             border: 2px solid #e0e6ed;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 14px;
-            transition: border-color 0.3s;
-            margin-bottom: 10px;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+            background: #f8fafb;
         }
 
         input[type="text"]:focus,
         input[type="password"]:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #00A4EF;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(0, 164, 239, 0.1);
         }
 
         .sync-btn {
-            background: #667eea;
+            background: linear-gradient(135deg, #00A4EF 0%, #0088CC 100%);
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
             transition: all 0.3s;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .sync-btn:hover {
-            background: #764ba2;
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 15px 40px rgba(0, 164, 239, 0.4);
+            transform: translateY(-3px);
         }
 
         .sync-btn:disabled {
@@ -122,11 +228,12 @@
         }
 
         .status-message {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 12px;
+            margin-top: 12px;
+            padding: 13px 15px;
+            border-radius: 10px;
+            font-size: 13px;
             display: none;
+            font-weight: 600;
         }
 
         .status-message.success {
@@ -140,71 +247,26 @@
             color: #721c24;
             display: block;
         }
-
-        .user-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        button {
-            padding: 12px 20px;
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            background: white;
-            color: #667eea;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        button:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        button[type="submit"] {
-            margin-top: 30px;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            font-size: 16px;
-        }
-
-        button[type="submit"]:hover {
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-        }
-
-        input[type="hidden"] {
-            display: none;
-        }
-
-        .selected {
-            background: #667eea !important;
-            color: white !important;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo-container">
-            <svg class="plex-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <rect width="100" height="100" rx="15" fill="#222B3E"/>
-                <g fill="#00B4D8" transform="translate(25, 35)">
-                    <rect x="0" y="0" width="8" height="30"/>
-                    <rect x="12" y="5" width="8" height="25"/>
-                    <rect x="24" y="0" width="8" height="30"/>
-                </g>
-            </svg>
+        <div class="logo-wrapper">
+            <div class="logo-box">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <g fill="white" transform="translate(25, 30)">
+                        <rect x="0" y="5" width="7" height="40" rx="2"/>
+                        <rect x="11" y="10" width="7" height="35" rx="2"/>
+                        <rect x="22" y="5" width="7" height="40" rx="2"/>
+                    </g>
+                </svg>
+            </div>
+            <h1>Plex Tracker</h1>
+            <p class="subtitle">Track who's watched what</p>
         </div>
-        <h1>Plex Tracker</h1>
-        <p class="subtitle">Track who's watched what</p>
 
         <form method="POST">
-            <label for="user">Select your name:</label>
+            <label for="user">Select your name</label>
             <div class="user-buttons">
                 {% for u in users %}
                 <button type="button" onclick="selectUser('{{ u }}')">{{ u }}</button>
@@ -214,7 +276,7 @@
             <button type="submit" id="submit-btn" disabled>Continue</button>
         </form>
 
-        <div class="divider">or sync your Plex library</div>
+        <div class="divider"><span>or sync your plex library</span></div>
 
         <div class="plex-section">
             <h3>📺 Sync Plex Library</h3>
