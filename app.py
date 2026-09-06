@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, jsonify, session, redirect, u
 import sqlite3
 import os
 from datetime import datetime
+import requests
+import base64
 
 app = Flask(__name__)
 app.secret_key = 'plex-tracker-secret-key-change-in-production'
@@ -39,6 +41,82 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def get_plex_token(username, password):
+    """Authenticate with Plex and get API token."""
+    try:
+        auth_str = base64.b64encode(f"{username}:{password}".encode()).decode()
+        headers = {
+            'Authorization': f'Basic {auth_str}',
+            'X-Plex-Client-Identifier': 'plex-tracker'
+        }
+        response = requests.post('https://plex.tv/users/sign-in.json', headers=headers, timeout=5)
+        if response.status_code == 201:
+            return response.json().get('user', {}).get('authentication-token')
+        return None
+    except:
+        return None
+
+def get_plex_library(token):
+    """Fetch movies and shows from Plex library."""
+    try:
+        headers = {'X-Plex-Token': token}
+        # Get all servers
+        response = requests.get('https://plex.tv/api/resources', headers=headers, timeout=5)
+        if response.status_code != 200:
+            return []
+
+        servers = response.json()
+        items = []
+
+        for server in servers:
+            server_url = None
+            for conn in server.get('connections', []):
+                if conn.get('uri'):
+                    server_url = conn.get('uri')
+                    break
+
+            if not server_url:
+                continue
+
+            # Get library sections
+            try:
+                lib_response = requests.get(f'{server_url}/library/sections', headers=headers, timeout=5)
+                if lib_response.status_code != 200:
+                    continue
+
+                sections = lib_response.json().get('MediaContainer', {}).get('Directory', [])
+                for section in sections:
+                    section_type = section.get('type')
+                    if section_type not in ['movie', 'show']:
+                        continue
+
+                    section_key = section.get('key')
+                    media_type = 'Movie' if section_type == 'movie' else 'TV Show'
+
+                    # Get all media in section
+                    try:
+                        media_response = requests.get(
+                            f'{server_url}/library/sections/{section_key}/all',
+                            headers=headers,
+                            timeout=5,
+                            params={'X-Plex-Token': token}
+                        )
+                        if media_response.status_code == 200:
+                            media_container = media_response.json().get('MediaContainer', {})
+                            for video in media_container.get('Video', []):
+                                items.append({
+                                    'title': video.get('title', 'Unknown'),
+                                    'type': media_type
+                                })
+                    except:
+                        pass
+            except:
+                pass
+
+        return items
+    except:
+        return []
+
 @app.route('/')
 def index():
     if 'user' not in session:
@@ -58,6 +136,47 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/api/plex-sync', methods=['POST'])
+def plex_sync():
+    """Sync Plex library into the tracker."""
+    data = request.get_json()
+    plex_username = data.get('plex_username')
+    plex_password = data.get('plex_password')
+
+    if not plex_username or not plex_password:
+        return jsonify({'error': 'Missing credentials'}), 400
+
+    # Get Plex token
+    token = get_plex_token(plex_username, plex_password)
+    if not token:
+        return jsonify({'error': 'Invalid Plex credentials'}), 401
+
+    # Get library items
+    items = get_plex_library(token)
+
+    if not items:
+        return jsonify({'error': 'Could not fetch library or library is empty'}), 400
+
+    # Add items to database
+    conn = get_db_connection()
+    c = conn.cursor()
+
+    added = 0
+    for item in items:
+        try:
+            c.execute(
+                'INSERT INTO media (title, media_type) VALUES (?, ?)',
+                (item['title'], item['type'])
+            )
+            added += 1
+        except sqlite3.IntegrityError:
+            pass  # Skip duplicates
+
+    conn.commit()
+    conn.close()
+
+    return jsonify({'success': True, 'added': added})
 
 @app.route('/api/media', methods=['GET'])
 def get_media():

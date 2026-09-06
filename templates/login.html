@@ -66,6 +66,81 @@
             font-weight: 600;
         }
 
+        .divider {
+            text-align: center;
+            margin: 25px 0 20px;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .plex-section {
+            border-top: 1px solid #e0e6ed;
+            padding-top: 20px;
+        }
+
+        .plex-section h3 {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            margin-bottom: 10px;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .sync-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .sync-btn:hover {
+            background: #764ba2;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .sync-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .status-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
         .user-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -138,6 +213,16 @@
             <input type="hidden" id="user" name="user" value="">
             <button type="submit" id="submit-btn" disabled>Continue</button>
         </form>
+
+        <div class="divider">or sync your Plex library</div>
+
+        <div class="plex-section">
+            <h3>📺 Sync Plex Library</h3>
+            <input type="text" id="plex-username" placeholder="Plex username" autocomplete="username">
+            <input type="password" id="plex-password" placeholder="Plex password" autocomplete="password">
+            <button class="sync-btn" onclick="syncPlex()">Sync Plex Library</button>
+            <div class="status-message" id="sync-status"></div>
+        </div>
     </div>
 
     <script>
@@ -147,6 +232,53 @@
             buttons.forEach(btn => btn.classList.remove('selected'));
             event.target.classList.add('selected');
             document.getElementById('submit-btn').disabled = false;
+        }
+
+        async function syncPlex() {
+            const username = document.getElementById('plex-username').value;
+            const password = document.getElementById('plex-password').value;
+            const statusDiv = document.getElementById('sync-status');
+            const syncBtn = document.querySelector('.sync-btn');
+
+            if (!username || !password) {
+                statusDiv.textContent = 'Please enter your Plex credentials';
+                statusDiv.className = 'status-message error';
+                return;
+            }
+
+            syncBtn.disabled = true;
+            statusDiv.textContent = 'Syncing your library...';
+            statusDiv.className = 'status-message';
+
+            try {
+                const response = await fetch('/api/plex-sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        plex_username: username,
+                        plex_password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusDiv.textContent = `✓ Synced ${data.added} items from your Plex library!`;
+                    statusDiv.className = 'status-message success';
+                    setTimeout(() => {
+                        document.getElementById('plex-username').value = '';
+                        document.getElementById('plex-password').value = '';
+                    }, 2000);
+                } else {
+                    statusDiv.textContent = data.error || 'Sync failed';
+                    statusDiv.className = 'status-message error';
+                }
+            } catch (error) {
+                statusDiv.textContent = 'Error connecting to Plex. Check your credentials.';
+                statusDiv.className = 'status-message error';
+            }
+
+            syncBtn.disabled = false;
         }
     </script>
 </body>
