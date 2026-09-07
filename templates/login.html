@@ -325,7 +325,9 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    statusDiv.textContent = `✓ Synced ${data.added} items from your Plex library!`;
+                    statusDiv.textContent = data.added
+                        ? `✓ Added ${data.added} new titles (${data.found} in your library).`
+                        : `✓ Already up to date — all ${data.found} titles are in the tracker.`;
                     statusDiv.className = 'status-message success';
                     setTimeout(() => {
                         document.getElementById('plex-username').value = '';

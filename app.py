@@ -3,7 +3,6 @@ import sqlite3
 import os
 from datetime import datetime
 import requests
-import base64
 
 app = Flask(__name__)
 app.secret_key = 'plex-tracker-secret-key-change-in-production'
@@ -32,6 +31,14 @@ def init_db():
         UNIQUE(media_id, user)
     )''')
 
+    # Re-syncing must not clone the library, so a title can only appear once.
+    # Existing rows are collapsed onto the lowest id before the index is added.
+    c.execute('''DELETE FROM media WHERE id NOT IN (
+        SELECT MIN(id) FROM media GROUP BY title, media_type
+    )''')
+    c.execute('DELETE FROM watched WHERE media_id NOT IN (SELECT id FROM media)')
+    c.execute('CREATE UNIQUE INDEX IF NOT EXISTS media_unique ON media (title, media_type)')
+
     conn.commit()
     conn.close()
 
@@ -41,92 +48,116 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+PLEX_HEADERS = {
+    'X-Plex-Client-Identifier': 'plex-tracker',
+    'X-Plex-Product': 'Plex Tracker',
+    'X-Plex-Version': '1.0',
+    'Accept': 'application/json',
+}
+
 def get_plex_token(username, password):
-    """Authenticate with Plex and get API token."""
+    """Authenticate with Plex. Returns (token, error_message)."""
+    response = requests.post(
+        'https://plex.tv/api/v2/users/signin',
+        headers=PLEX_HEADERS,
+        data={'login': username, 'password': password},
+        timeout=20,
+    )
+
+    if response.status_code == 200 or response.status_code == 201:
+        return response.json().get('authToken'), None
+
+    message = 'Plex rejected the sign-in.'
     try:
-        auth_str = base64.b64encode(f"{username}:{password}".encode()).decode()
-        headers = {
-            'Authorization': f'Basic {auth_str}',
-            'X-Plex-Client-Identifier': 'plex-tracker',
-            'X-Plex-Product': 'Plex Tracker',
-            'X-Plex-Version': '1.0'
-        }
-        # Try the modern endpoint first
-        response = requests.post('https://plex.tv/api/v2/user/signin', headers=headers, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get('authToken') or data.get('authentication-token')
+        errors = response.json().get('errors') or []
+        if errors:
+            message = errors[0].get('message', message)
+    except ValueError:
+        pass
 
-        # Fallback to legacy endpoint
-        response = requests.post('https://plex.tv/users/sign-in.json', headers=headers, timeout=5)
-        if response.status_code == 201:
-            return response.json().get('user', {}).get('authentication-token')
+    if response.status_code == 401:
+        message = message.rstrip('.') + '. If your Plex account has two-factor authentication on, append the 6-digit code to the end of your password.'
+    return None, message
 
-        return None
-    except Exception as e:
-        print(f"Plex auth error: {e}")
-        return None
+def reachable_connections(server):
+    """Public connections for a server, best first.
+
+    Remote (non-local) URIs only: this app runs in the cloud, so a LAN address
+    from the Plex response is never routable. Relay is slow, so it goes last.
+    """
+    remote = [c for c in server.get('connections', []) if c.get('uri') and not c.get('local')]
+    remote.sort(key=lambda c: bool(c.get('relay')))
+    return [c['uri'] for c in remote]
+
+def fetch_sections(base_url, headers):
+    response = requests.get(f'{base_url}/library/sections', headers=headers, timeout=20)
+    response.raise_for_status()
+    return response.json().get('MediaContainer', {}).get('Directory', [])
 
 def get_plex_library(token):
-    """Fetch movies and shows from Plex library."""
-    try:
-        headers = {'X-Plex-Token': token}
-        # Get all servers
-        response = requests.get('https://plex.tv/api/resources', headers=headers, timeout=5)
-        if response.status_code != 200:
-            return []
+    """Fetch movies and shows from every Plex server. Returns (items, error)."""
+    headers = dict(PLEX_HEADERS, **{'X-Plex-Token': token})
 
-        servers = response.json()
-        items = []
+    response = requests.get(
+        'https://plex.tv/api/v2/resources',
+        headers=headers,
+        params={'includeHttps': 1, 'includeRelay': 1},
+        timeout=20,
+    )
+    if response.status_code != 200:
+        return [], 'Signed in, but Plex would not list your servers.'
 
-        for server in servers:
-            server_url = None
-            for conn in server.get('connections', []):
-                if conn.get('uri'):
-                    server_url = conn.get('uri')
-                    break
+    servers = [r for r in response.json() if 'server' in (r.get('provides') or '')]
+    if not servers:
+        return [], 'No Plex Media Server is attached to this account.'
 
-            if not server_url:
+    items = []
+    unreachable = []
+
+    for server in servers:
+        name = server.get('name', 'server')
+        base_url = None
+        for uri in reachable_connections(server):
+            try:
+                sections = fetch_sections(uri, headers)
+                base_url = uri
+                break
+            except requests.RequestException:
                 continue
 
-            # Get library sections
+        if not base_url:
+            unreachable.append(name)
+            continue
+
+        for section in sections:
+            kind = section.get('type')
+            if kind not in ('movie', 'show'):
+                continue
+            media_type = 'Movie' if kind == 'movie' else 'TV Show'
+
             try:
-                lib_response = requests.get(f'{server_url}/library/sections', headers=headers, timeout=5)
-                if lib_response.status_code != 200:
-                    continue
+                media_response = requests.get(
+                    f'{base_url}/library/sections/{section.get("key")}/all',
+                    headers=headers,
+                    timeout=60,
+                )
+                media_response.raise_for_status()
+                container = media_response.json().get('MediaContainer', {})
+            except (requests.RequestException, ValueError):
+                continue
 
-                sections = lib_response.json().get('MediaContainer', {}).get('Directory', [])
-                for section in sections:
-                    section_type = section.get('type')
-                    if section_type not in ['movie', 'show']:
-                        continue
+            # Movies arrive under Video, shows under Directory.
+            for entry in container.get('Video', []) + container.get('Directory', []):
+                title = entry.get('title')
+                if title:
+                    items.append({'title': title, 'type': media_type})
 
-                    section_key = section.get('key')
-                    media_type = 'Movie' if section_type == 'movie' else 'TV Show'
+    if not items:
+        if unreachable:
+            return [], f'Could not reach {", ".join(unreachable)}. Check that Remote Access is still enabled on the server.'
+        return [], 'Connected to Plex, but found no movie or TV libraries.'
 
-                    # Get all media in section
-                    try:
-                        media_response = requests.get(
-                            f'{server_url}/library/sections/{section_key}/all',
-                            headers=headers,
-                            timeout=5,
-                            params={'X-Plex-Token': token}
-                        )
-                        if media_response.status_code == 200:
-                            media_container = media_response.json().get('MediaContainer', {})
-                            for video in media_container.get('Video', []):
-                                items.append({
-                                    'title': video.get('title', 'Unknown'),
-                                    'type': media_type
-                                })
-                    except:
-                        pass
-            except:
-                pass
-
-        return items
-    except:
-        return []
+    return items, None
 
 @app.route('/')
 def index():
@@ -158,36 +189,32 @@ def plex_sync():
     if not plex_username or not plex_password:
         return jsonify({'error': 'Missing credentials'}), 400
 
-    # Get Plex token
-    token = get_plex_token(plex_username, plex_password)
-    if not token:
-        return jsonify({'error': 'Invalid Plex credentials'}), 401
+    try:
+        token, auth_error = get_plex_token(plex_username, plex_password)
+        if not token:
+            return jsonify({'error': auth_error}), 401
 
-    # Get library items
-    items = get_plex_library(token)
+        items, library_error = get_plex_library(token)
+        if library_error:
+            return jsonify({'error': library_error}), 400
+    except requests.RequestException:
+        return jsonify({'error': 'Could not reach Plex. Try again in a moment.'}), 502
 
-    if not items:
-        return jsonify({'error': 'Could not fetch library or library is empty'}), 400
-
-    # Add items to database
     conn = get_db_connection()
     c = conn.cursor()
 
     added = 0
     for item in items:
-        try:
-            c.execute(
-                'INSERT INTO media (title, media_type) VALUES (?, ?)',
-                (item['title'], item['type'])
-            )
-            added += 1
-        except sqlite3.IntegrityError:
-            pass  # Skip duplicates
+        c.execute(
+            'INSERT OR IGNORE INTO media (title, media_type) VALUES (?, ?)',
+            (item['title'], item['type'])
+        )
+        added += c.rowcount
 
     conn.commit()
     conn.close()
 
-    return jsonify({'success': True, 'added': added})
+    return jsonify({'success': True, 'added': added, 'found': len(items)})
 
 @app.route('/api/media', methods=['GET'])
 def get_media():
