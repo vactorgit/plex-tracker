@@ -336,7 +336,9 @@
                     statusDiv.className = 'status-message error';
                 }
             } catch (error) {
-                statusDiv.textContent = 'Error connecting to Plex. Check your credentials.';
+                // fetch itself failed, so this never reached Plex — saying
+                // "check your credentials" here sends people down the wrong path
+                statusDiv.textContent = 'Could not reach the tracker itself. Open the app at its railway.app address rather than a local file.';
                 statusDiv.className = 'status-message error';
             }
 
