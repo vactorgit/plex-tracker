@@ -13,12 +13,12 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f7fa;
-            color: #333;
+            background: #14171A;
+            color: #E8E8E8;
         }
 
         header {
-            background: linear-gradient(135deg, #00A4EF 0%, #223344 100%);
+            background: #1F2326;
             color: white;
             padding: 15px 30px;
             display: flex;
@@ -81,7 +81,7 @@
         }
 
         .add-media {
-            background: white;
+            background: #1F2326;
             border-radius: 12px;
             padding: 25px;
             margin-bottom: 30px;
@@ -97,8 +97,10 @@
 
         .form-group input,
         .form-group select {
+            background: #2A2F33;
+            color: #F5F5F5;
             padding: 12px;
-            border: 2px solid #e0e6ed;
+            border: 2px solid #33383C;
             border-radius: 8px;
             font-size: 14px;
             transition: border-color 0.3s;
@@ -107,12 +109,12 @@
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #E5A00D;
         }
 
         .add-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: linear-gradient(135deg, #E5A00D 0%, #C4870B 100%);
+            color: #1F2326;
             border: none;
             padding: 12px 30px;
             border-radius: 8px;
@@ -122,7 +124,7 @@
         }
 
         .add-btn:hover {
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 25px rgba(229, 160, 13, 0.4);
         }
 
         .media-list {
@@ -132,7 +134,7 @@
         }
 
         .media-card {
-            background: white;
+            background: #1F2326;
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -153,13 +155,13 @@
         .media-title {
             font-size: 18px;
             font-weight: 700;
-            color: #333;
+            color: #F5F5F5;
             flex: 1;
         }
 
         .media-type {
-            background: #667eea;
-            color: white;
+            background: #E5A00D;
+            color: #1F2326;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 12px;
@@ -189,7 +191,7 @@
 
         .watched-label {
             font-size: 12px;
-            color: #666;
+            color: #9BA1A6;
             font-weight: 600;
             margin-bottom: 8px;
             text-transform: uppercase;
@@ -207,7 +209,7 @@
             align-items: center;
             gap: 8px;
             padding: 8px 12px;
-            background: #f5f7fa;
+            background: #2A2F33;
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
@@ -220,11 +222,11 @@
         }
 
         .user-checkbox input[type="checkbox"]:checked {
-            accent-color: #667eea;
+            accent-color: #E5A00D;
         }
 
         .user-checkbox:hover {
-            background: #e0e6ed;
+            background: #33383C;
         }
 
         .user-name {
@@ -233,8 +235,8 @@
         }
 
         .all-watched-badge {
-            background: #d4edda;
-            color: #155724;
+            background: #1B3326;
+            color: #7EE2A8;
             padding: 8px 12px;
             border-radius: 6px;
             font-size: 12px;
@@ -246,7 +248,7 @@
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #666;
+            color: #9BA1A6;
         }
 
         .empty-state-icon {
@@ -257,7 +259,7 @@
         .empty-state h2 {
             font-size: 24px;
             margin-bottom: 10px;
-            color: #333;
+            color: #F5F5F5;
         }
     </style>
 </head>
@@ -265,12 +267,9 @@
     <header>
         <div class="header-left">
             <svg class="header-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <rect width="100" height="100" rx="8" fill="#FFFFFF" opacity="0.15"/>
-                <g fill="#FFFFFF" transform="translate(28, 30)">
-                    <rect x="0" y="0" width="7" height="40"/>
-                    <rect x="11" y="8" width="7" height="32"/>
-                    <rect x="22" y="0" width="7" height="40"/>
-                </g>
+                <rect width="100" height="100" rx="20" fill="#E5A00D"/>
+                <path d="M38 24 L64 50 L38 76" fill="none" stroke="#1F2326"
+                      stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <h1>Plex Tracker</h1>
         </div>
