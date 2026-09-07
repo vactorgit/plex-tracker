@@ -122,17 +122,26 @@ def get_plex_library(token):
 
     for server in servers:
         name = server.get('name', 'server')
+        # A server shared with you issues its own token; the account token is
+        # only good for plex.tv itself and gets rejected by someone else's server.
+        server_headers = dict(PLEX_HEADERS,
+                              **{'X-Plex-Token': server.get('accessToken') or token})
+
         base_url = None
+        reason = 'no public address published'
         for uri in reachable_connections(server):
             try:
-                sections = fetch_sections(uri, headers)
+                sections = fetch_sections(uri, server_headers)
                 base_url = uri
                 break
+            except requests.HTTPError as e:
+                code = e.response.status_code
+                reason = f'it refused our access ({code})' if code in (401, 403) else f'it answered {code}'
             except requests.RequestException:
-                continue
+                reason = 'nothing answered at its address'
 
         if not base_url:
-            unreachable.append(name)
+            unreachable.append(f'{name} — {reason}')
             continue
 
         for section in sections:
@@ -144,7 +153,7 @@ def get_plex_library(token):
             try:
                 media_response = requests.get(
                     f'{base_url}/library/sections/{section.get("key")}/all',
-                    headers=headers,
+                    headers=server_headers,
                     timeout=60,
                 )
                 media_response.raise_for_status()
@@ -160,7 +169,7 @@ def get_plex_library(token):
 
     if not items:
         if unreachable:
-            return [], f'Could not reach {", ".join(unreachable)}. Check that Remote Access is still enabled on the server.'
+            return [], 'Could not read ' + '; '.join(unreachable) + '.'
         return [], 'Connected to Plex, but found no movie or TV libraries.'
 
     return items, None
