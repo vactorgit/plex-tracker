@@ -7,11 +7,17 @@ import requests
 app = Flask(__name__)
 app.secret_key = 'plex-tracker-secret-key-change-in-production'
 
-DB_PATH = 'plex_tracker.db'
+# Hosting containers start from a blank filesystem on every deploy, so the
+# database has to live on a mounted disk that outlives the container.
+DB_PATH = os.environ.get('DB_PATH', 'plex_tracker.db')
 USERS = ['Vactor', 'Jeff', 'Brad']
 
 def init_db():
     """Initialize the database with tables."""
+    parent = os.path.dirname(DB_PATH)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
